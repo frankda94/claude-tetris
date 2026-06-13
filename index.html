@@ -43,6 +43,20 @@
         </div>
 
         <div class="panel-section">
+          <span class="label">RECORDS</span>
+          <ol id="highscore-list"></ol>
+          <div class="stat-row">
+            <span class="label">Mejor combo</span>
+            <span class="value small" id="best-combo">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Más líneas</span>
+            <span class="value small" id="max-lines">0</span>
+          </div>
+          <button id="reset-highscores-btn">Reiniciar récords</button>
+        </div>
+
+        <div class="panel-section">
           <label class="theme-toggle">
             <input type="checkbox" id="theme-toggle" />
             <span class="label">MODO CLARO</span>
@@ -55,6 +69,11 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <div id="highscore-input" class="hidden">
+          <input type="text" id="player-name" maxlength="8" placeholder="Nombre" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
+        <ol id="overlay-highscores" class="hidden"></ol>
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>
