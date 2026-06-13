@@ -66,8 +66,20 @@ const restartPauseBtn = document.getElementById('restart-pause-btn');
 const controlsBtn = document.getElementById('controls-btn');
 const backControlsBtn = document.getElementById('back-controls-btn');
 const startLevelSelect = document.getElementById('start-level-select');
+const highscoreList = document.getElementById('highscore-list');
+const bestComboEl = document.getElementById('best-combo');
+const maxLinesEl = document.getElementById('max-lines');
+const resetHighscoresBtn = document.getElementById('reset-highscores-btn');
+const highscoreInput = document.getElementById('highscore-input');
+const playerNameInput = document.getElementById('player-name');
+const saveScoreBtn = document.getElementById('save-score-btn');
+const overlayHighscores = document.getElementById('overlay-highscores');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+const HIGHSCORES_KEY = 'tetris-highscores';
+const BEST_COMBO_KEY = 'tetris-best-combo';
+const MAX_LINES_KEY = 'tetris-max-lines';
+
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, combo, bestComboThisGame;
 let currentSkin = localStorage.getItem('tetris-skin') || 'retro';
 
 let startLevel = parseInt(localStorage.getItem('tetris-start-level'), 10);
@@ -140,8 +152,65 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    combo++;
+    bestComboThisGame = Math.max(bestComboThisGame, combo);
     updateHUD();
+  } else {
+    combo = 0;
   }
+}
+
+function getHighscores() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HIGHSCORES_KEY));
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHighscores(list) {
+  localStorage.setItem(HIGHSCORES_KEY, JSON.stringify(list));
+}
+
+function getBestCombo() {
+  return Number(localStorage.getItem(BEST_COMBO_KEY)) || 0;
+}
+
+function setBestCombo(n) {
+  localStorage.setItem(BEST_COMBO_KEY, String(n));
+}
+
+function getMaxLines() {
+  return Number(localStorage.getItem(MAX_LINES_KEY)) || 0;
+}
+
+function setMaxLines(n) {
+  localStorage.setItem(MAX_LINES_KEY, String(n));
+}
+
+function renderHighscores(highlightIndex) {
+  const list = getHighscores();
+  highscoreList.innerHTML = '';
+  list.forEach((entry, i) => {
+    const li = document.createElement('li');
+    if (i === highlightIndex) li.classList.add('highlight');
+    li.innerHTML = `<span class="hs-name">${entry.name}</span><span class="hs-score">${entry.score.toLocaleString()}</span>`;
+    highscoreList.appendChild(li);
+  });
+  bestComboEl.textContent = getBestCombo();
+  maxLinesEl.textContent = getMaxLines();
+}
+
+function renderOverlayHighscores(highlightIndex) {
+  const list = getHighscores();
+  overlayHighscores.innerHTML = '';
+  list.forEach((entry, i) => {
+    const li = document.createElement('li');
+    if (i === highlightIndex) li.classList.add('highlight');
+    li.innerHTML = `<span class="hs-name">${entry.name}</span><span class="hs-score">${entry.score.toLocaleString()}</span>`;
+    overlayHighscores.appendChild(li);
+  });
 }
 
 function ghostY() {
@@ -313,6 +382,47 @@ function endGame() {
   pauseMenu.classList.add('hidden');
   gameoverBox.classList.remove('hidden');
   overlay.classList.remove('hidden');
+
+  if (bestComboThisGame > getBestCombo()) setBestCombo(bestComboThisGame);
+  if (lines > getMaxLines()) setMaxLines(lines);
+
+  const highscores = getHighscores();
+  const qualifies = highscores.length < 5 ||
+    score > highscores[highscores.length - 1].score;
+
+  if (qualifies) {
+    highscoreInput.classList.remove('hidden');
+    overlayHighscores.classList.add('hidden');
+    playerNameInput.value = '';
+    playerNameInput.focus();
+  } else {
+    highscoreInput.classList.add('hidden');
+    overlayHighscores.classList.remove('hidden');
+    renderOverlayHighscores(-1);
+  }
+
+  renderHighscores();
+}
+
+function saveHighscore() {
+  let name = playerNameInput.value.trim().slice(0, 8);
+  if (!name) name = 'AAA';
+
+  const highscores = getHighscores();
+  highscores.push({ name, score });
+  highscores.sort((a, b) => b.score - a.score);
+  highscores.splice(5);
+  saveHighscores(highscores);
+
+  const highlightIndex = highscores.findIndex(
+    e => e.name === name && e.score === score
+  );
+
+  renderHighscores(highlightIndex);
+
+  highscoreInput.classList.add('hidden');
+  overlayHighscores.classList.remove('hidden');
+  renderOverlayHighscores(highlightIndex);
 }
 
 function showPauseMenu() {
@@ -366,6 +476,8 @@ function init() {
   gameOver = false;
   dropInterval = Math.max(100, 1000 - (startLevel - 1) * 90);
   dropAccum = 0;
+  combo = 0;
+  bestComboThisGame = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
@@ -373,6 +485,9 @@ function init() {
   overlay.classList.add('hidden');
   gameoverBox.classList.remove('hidden');
   pauseMenu.classList.add('hidden');
+  highscoreInput.classList.add('hidden');
+  overlayHighscores.classList.add('hidden');
+  renderHighscores();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -429,6 +544,18 @@ startLevelSelect.addEventListener('change', e => {
   if (!Number.isInteger(value) || value < 1 || value > 10) value = 1;
   startLevel = value;
   localStorage.setItem('tetris-start-level', String(startLevel));
+});
+
+saveScoreBtn.addEventListener('click', saveHighscore);
+playerNameInput.addEventListener('keydown', e => {
+  if (e.code === 'Enter') saveHighscore();
+});
+
+resetHighscoresBtn.addEventListener('click', () => {
+  localStorage.removeItem(HIGHSCORES_KEY);
+  localStorage.removeItem(BEST_COMBO_KEY);
+  localStorage.removeItem(MAX_LINES_KEY);
+  renderHighscores();
 });
 
 const themeToggle = document.getElementById('theme-toggle');
