@@ -36,56 +36,6 @@ body.light-mode {
   --overlay-bg: rgba(200, 200, 220, 0.85);
 }
 
-/* ---- Skins ---- */
-body.skin-neon {
-  --bg: #050507;
-  --board-bg: #000000;
-  --border: #1a1a2a;
-  --accent: #39ff14;
-  --accent-hover: #7fff5a;
-  --grid: #0e0e16;
-  --kbd-bg: #0a0a12;
-  --kbd-border: #2a2a3a;
-  --kbd-text: #39ff14;
-  --board-glow: 0 0 24px rgba(57, 255, 20, 0.35), 0 0 60px rgba(122, 162, 247, 0.15);
-}
-
-body.skin-pastel {
-  --bg: #fbf3f7;
-  --board-bg: #fffafd;
-  --border: #f0d9e6;
-  --accent: #b48ead;
-  --accent-hover: #cba6c3;
-  --label: #c2a6b8;
-  --control-text: #a98fa3;
-  --grid: #f4e6ef;
-  --kbd-bg: #f6e9f1;
-  --kbd-border: #e8cfdf;
-  --kbd-text: #b48ead;
-  --overlay-bg: rgba(250, 235, 244, 0.85);
-}
-
-body.skin-pixel {
-  --bg: #14141c;
-  --board-bg: #1e1e2a;
-  --border: #3a3a4e;
-  --accent: #ffd54f;
-  --accent-hover: #ffe082;
-  --grid: #2a2a3a;
-}
-
-body.skin-pixel,
-body.skin-pixel .value,
-body.skin-pixel #overlay-title,
-body.skin-pixel #overlay-score {
-  font-family: 'Courier New', Courier, monospace;
-}
-
-body.skin-neon #board,
-body.skin-neon #next-canvas {
-  box-shadow: var(--board-glow, 0 0 40px rgba(0, 0, 0, 0.6));
-}
-
 body {
   background: var(--bg);
   color: var(--text);
@@ -233,28 +183,6 @@ kbd {
 .theme-toggle input[type="checkbox"]:checked::after {
   left: 16px;
   background: #fff;
-}
-
-/* ---- Skin select ---- */
-.skin-select-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-#skin-select {
-  background: var(--kbd-bg);
-  border: 1px solid var(--kbd-border);
-  border-radius: 4px;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 12px;
-  padding: 6px 8px;
-  cursor: pointer;
-}
-
-#skin-select:focus {
-  outline: 1px solid var(--accent);
 }
 
 /* ---- Overlay ---- */
