@@ -15,6 +15,133 @@ const COLORS = [
   '#ffb74d', // L - orange
 ];
 
+const SKINS = {
+  retro: {
+    name: 'Retro',
+    colors: COLORS,
+    boardBg: null, // use CSS variable
+    draw(context, x, y, colorIndex, size, alpha) {
+      const color = SKINS.retro.colors[colorIndex];
+      context.globalAlpha = alpha ?? 1;
+      context.fillStyle = color;
+      context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+      context.fillStyle = isLight() ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)';
+      context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+      context.globalAlpha = 1;
+    },
+  },
+  neon: {
+    name: 'Neon',
+    colors: [
+      null,
+      '#00f6ff', // I - cyan
+      '#fff700', // O - yellow
+      '#ff00f7', // T - magenta
+      '#39ff14', // S - green
+      '#ff2d55', // Z - red
+      '#3a86ff', // J - blue
+      '#ff9100', // L - orange
+    ],
+    boardBg: '#000000',
+    draw(context, x, y, colorIndex, size, alpha) {
+      const color = SKINS.neon.colors[colorIndex];
+      context.save();
+      context.globalAlpha = alpha ?? 1;
+      context.shadowColor = color;
+      context.shadowBlur = 12;
+      context.fillStyle = color;
+      context.fillRect(x * size + 2, y * size + 2, size - 4, size - 4);
+      context.shadowBlur = 0;
+      context.strokeStyle = color;
+      context.lineWidth = 1;
+      context.strokeRect(x * size + 2, y * size + 2, size - 4, size - 4);
+      context.restore();
+    },
+  },
+  pastel: {
+    name: 'Pastel',
+    colors: [
+      null,
+      '#aee3f0', // I - light blue
+      '#fff3b0', // O - light yellow
+      '#dcc6f0', // T - lavender
+      '#c5ecc8', // S - mint
+      '#f7c6c7', // Z - pink
+      '#c9dcf5', // J - powder blue
+      '#fbdfb8', // L - peach
+    ],
+    boardBg: null,
+    draw(context, x, y, colorIndex, size, alpha) {
+      const color = SKINS.pastel.colors[colorIndex];
+      const px = x * size + 1;
+      const py = y * size + 1;
+      const w = size - 2;
+      const h = size - 2;
+      const r = Math.min(6, w / 3, h / 3);
+      context.globalAlpha = alpha ?? 1;
+      context.fillStyle = color;
+      context.beginPath();
+      if (context.roundRect) {
+        context.roundRect(px, py, w, h, r);
+      } else {
+        context.moveTo(px + r, py);
+        context.lineTo(px + w - r, py);
+        context.arcTo(px + w, py, px + w, py + r, r);
+        context.lineTo(px + w, py + h - r);
+        context.arcTo(px + w, py + h, px + w - r, py + h, r);
+        context.lineTo(px + r, py + h);
+        context.arcTo(px, py + h, px, py + h - r, r);
+        context.lineTo(px, py + r);
+        context.arcTo(px, py, px + r, py, r);
+        context.closePath();
+      }
+      context.fill();
+      context.globalAlpha = 1;
+    },
+  },
+  pixel: {
+    name: 'Pixel Art',
+    colors: COLORS,
+    boardBg: null,
+    draw(context, x, y, colorIndex, size, alpha) {
+      const color = SKINS.pixel.colors[colorIndex];
+      const px = x * size + 1;
+      const py = y * size + 1;
+      const w = size - 2;
+      const h = size - 2;
+      context.globalAlpha = alpha ?? 1;
+      context.fillStyle = color;
+      context.fillRect(px, py, w, h);
+
+      // checkered texture pattern drawn on top
+      const cell = Math.max(4, Math.floor(size / 6));
+      context.fillStyle = isLight() ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.15)';
+      for (let ty = 0; ty < h; ty += cell) {
+        for (let tx = 0; tx < w; tx += cell) {
+          const checker = ((Math.floor(tx / cell) + Math.floor(ty / cell)) % 2) === 0;
+          if (checker) {
+            const cw = Math.min(cell, w - tx);
+            const ch = Math.min(cell, h - ty);
+            context.fillRect(px + tx, py + ty, cw, ch);
+          }
+        }
+      }
+
+      // border to emphasize pixel grid
+      context.strokeStyle = isLight() ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.35)';
+      context.lineWidth = 1;
+      context.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
+      context.globalAlpha = 1;
+    },
+  },
+};
+
+let currentSkin = 'retro';
+
+function getSkin() {
+  return SKINS[currentSkin] || SKINS.retro;
+}
+
 const PIECES = [
   null,
   [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
@@ -267,13 +394,7 @@ function isLight() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  context.fillStyle = isLight() ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+  getSkin().draw(context, x, y, colorIndex, size, alpha);
 }
 
 function drawGrid() {
@@ -293,8 +414,17 @@ function drawGrid() {
   }
 }
 
+function drawBoardBackground() {
+  const skin = getSkin();
+  if (skin.boardBg) {
+    ctx.fillStyle = skin.boardBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBoardBackground();
   drawGrid();
 
   // board
@@ -318,6 +448,11 @@ function draw() {
 function drawNext() {
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  const skin = getSkin();
+  if (skin.boardBg) {
+    nextCtx.fillStyle = skin.boardBg;
+    nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  }
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
@@ -512,5 +647,18 @@ if (localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light-mode');
   themeToggle.checked = true;
 }
+
+const skinSelect = document.getElementById('skin-select');
+skinSelect.addEventListener('change', e => {
+  currentSkin = SKINS[e.target.value] ? e.target.value : 'retro';
+  localStorage.setItem('skin', currentSkin);
+  draw();
+  drawNext();
+});
+const savedSkin = localStorage.getItem('skin');
+if (savedSkin && SKINS[savedSkin]) {
+  currentSkin = savedSkin;
+}
+skinSelect.value = currentSkin;
 
 showStartScreen();

@@ -185,6 +185,29 @@ kbd {
   background: #fff;
 }
 
+/* ---- Skin select ---- */
+.skin-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.skin-select select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.skin-select select:focus {
+  outline: 1px solid var(--accent);
+}
+
 /* ---- Overlay ---- */
 .overlay {
   position: absolute;
