@@ -49,11 +49,33 @@ const bestLinesEl = document.getElementById('best-lines');
 const resetRecordsBtn = document.getElementById('reset-records-btn');
 const recordsSection = document.getElementById('records-section');
 
+const pauseOverlay = document.getElementById('pause-overlay');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const controlsBtn = document.getElementById('controls-btn');
+const controlsView = document.getElementById('controls-view');
+const startLevelValueEl = document.getElementById('start-level-value');
+const levelDownBtn = document.getElementById('level-down-btn');
+const levelUpBtn = document.getElementById('level-up-btn');
+
 const HIGHSCORES_KEY = 'tetris-highscores';
 const LAST_NAME_KEY = 'tetris-last-name';
 const MAX_RECORDS = 5;
+const MIN_START_LEVEL = 1;
+const MAX_START_LEVEL = 15;
 
 let board, current, next, score, lines, level, combo, maxCombo, paused, gameOver, started, scoreSaved, lastTime, dropAccum, dropInterval, animId;
+let startLevel = loadStartLevel();
+
+function loadStartLevel() {
+  const stored = parseInt(localStorage.getItem('tetris-start-level'), 10);
+  if (Number.isNaN(stored)) return 1;
+  return Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, stored));
+}
+
+function updateStartLevelDisplay() {
+  startLevelValueEl.textContent = startLevel;
+}
 
 function loadRecords() {
   try {
@@ -336,16 +358,13 @@ function togglePause() {
   if (gameOver || !started) return;
   paused = !paused;
   if (!paused) {
+    pauseOverlay.classList.add('hidden');
+    controlsView.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    restartBtn.textContent = 'Jugar';
-    nameInputSection.classList.add('hidden');
-    recordsSection.classList.add('hidden');
-    overlay.classList.remove('hidden');
+    pauseOverlay.classList.remove('hidden');
   }
 }
 
@@ -369,14 +388,14 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  level = startLevel;
   combo = 0;
   maxCombo = 0;
   paused = false;
   gameOver = false;
   started = true;
   scoreSaved = false;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
@@ -385,6 +404,8 @@ function init() {
   overlay.classList.add('hidden');
   nameInputSection.classList.add('hidden');
   recordsSection.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  controlsView.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -415,7 +436,7 @@ function showStartScreen() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (!started || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -455,6 +476,32 @@ resetRecordsBtn.addEventListener('click', () => {
   localStorage.removeItem(HIGHSCORES_KEY);
   refreshRecordsDisplay(null);
 });
+
+resumeBtn.addEventListener('click', () => {
+  if (paused) togglePause();
+});
+
+pauseRestartBtn.addEventListener('click', () => {
+  init();
+});
+
+controlsBtn.addEventListener('click', () => {
+  controlsView.classList.toggle('hidden');
+});
+
+levelDownBtn.addEventListener('click', () => {
+  startLevel = Math.max(MIN_START_LEVEL, startLevel - 1);
+  localStorage.setItem('tetris-start-level', startLevel);
+  updateStartLevelDisplay();
+});
+
+levelUpBtn.addEventListener('click', () => {
+  startLevel = Math.min(MAX_START_LEVEL, startLevel + 1);
+  localStorage.setItem('tetris-start-level', startLevel);
+  updateStartLevelDisplay();
+});
+
+updateStartLevelDisplay();
 
 const themeToggle = document.getElementById('theme-toggle');
 themeToggle.addEventListener('change', e => {
